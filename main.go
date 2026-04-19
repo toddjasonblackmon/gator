@@ -34,6 +34,7 @@ func main() {
 	commandTable.register("users", handlerUsers)
 	commandTable.register("agg", handlerAgg)
 	commandTable.register("addfeed", handlerAddFeed)
+	commandTable.register("feeds", handlerFeeds)
         
 
 	if len(os.Args) < 2 {

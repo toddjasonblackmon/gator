@@ -167,4 +167,25 @@ func handlerAddFeed(s *state, cmd command) error {
 	return nil
 }
 
+func handlerFeeds(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return errors.New("invalid number of arguments given")
+	}
+
+	ctx := context.Background()
+
+	feeds, err := s.db.GetFeeds(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to get list of feeds")
+	}
+
+	for _, feed := range feeds {
+		fmt.Printf("%s\n * %s\n * from %s\n",
+            feed.Name, feed.Url, feed.Username)
+	}
+
+	return nil
+}
+
+
 
