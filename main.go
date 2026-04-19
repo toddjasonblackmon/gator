@@ -33,6 +33,8 @@ func main() {
 	commandTable.register("reset", handlerReset)
 	commandTable.register("users", handlerUsers)
 	commandTable.register("agg", handlerAgg)
+	commandTable.register("addfeed", handlerAddFeed)
+        
 
 	if len(os.Args) < 2 {
 		fmt.Println("not enough arguments provided")
