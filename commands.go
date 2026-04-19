@@ -118,3 +118,22 @@ func handlerUsers(s *state, cmd command) error {
 
 	return nil
 }
+
+func handlerAgg(s *state, cmd command) error {
+    url := "https://www.wagslane.dev/index.xml"
+
+	if len(cmd.args) != 0 {
+		return errors.New("invalid number of arguments given")
+	}
+	ctx := context.Background()
+
+    feed, err := fetchFeed(ctx, url)
+    if err != nil {
+        return err
+    }
+
+    fmt.Println(*feed)
+
+    return nil
+}
+
