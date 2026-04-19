@@ -1,14 +1,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"github.com/toddjasonblackmon/gator/internal/config"
+	"github.com/google/uuid"
+	"github.com/toddjasonblackmon/gator/internal/database"
+	"time"
 )
-
-type state struct {
-	config *config.Config
-}
 
 type command struct {
 	name string
@@ -43,9 +42,51 @@ func handlerLogin(s *state, cmd command) error {
 		return errors.New("invalid number of arguments given")
 	}
 
-	s.config.SetUser(cmd.args[0])
-	s.config.CurrentUserName = cmd.args[0]
-	fmt.Printf("Username has been set to \"%s\"\n", cmd.args[0])
+	username := cmd.args[0]
+	ctx := context.Background()
+
+	_, err := s.db.GetUser(ctx, username)
+	if err != nil {
+		return fmt.Errorf("unknown user %s", username)
+	}
+
+	s.config.SetUser(username)
+	s.config.CurrentUserName = username
+	fmt.Printf("Username has been set to \"%s\"\n", username)
 
 	return nil
 }
+
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.args) != 1 {
+		return errors.New("invalid number of arguments given")
+	}
+	ctx := context.Background()
+
+	username := cmd.args[0]
+
+	_, err := s.db.GetUser(ctx, username)
+	if err == nil {
+		return errors.New("attempting to create duplicate user")
+	}
+
+	user, err := s.db.CreateUser(ctx,
+		database.CreateUserParams{
+			uuid.New(), time.Now(),
+			time.Now(), username})
+	if err != nil {
+		return err
+	}
+
+	s.config.SetUser(username)
+	fmt.Print(user)
+
+	return nil
+}
+
+// type User struct {
+// 	ID        uuid.UUID
+// 	CreatedAt time.Time
+// 	UpdatedAt time.Time
+// 	Name      string
+// }
