@@ -84,9 +84,13 @@ func handlerRegister(s *state, cmd command) error {
 	return nil
 }
 
-// type User struct {
-// 	ID        uuid.UUID
-// 	CreatedAt time.Time
-// 	UpdatedAt time.Time
-// 	Name      string
-// }
+func handlerReset(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return errors.New("invalid number of arguments given")
+	}
+
+	ctx := context.Background()
+
+	return s.db.DeleteUsers(ctx)
+
+}

@@ -30,6 +30,7 @@ func main() {
 	commandTable := NewCommands()
 	commandTable.register("login", handlerLogin)
 	commandTable.register("register", handlerRegister)
+	commandTable.register("reset", handlerReset)
 
 	if len(os.Args) < 2 {
 		fmt.Println("not enough arguments provided")
