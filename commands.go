@@ -94,3 +94,27 @@ func handlerReset(s *state, cmd command) error {
 	return s.db.DeleteUsers(ctx)
 
 }
+
+func handlerUsers(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return errors.New("invalid number of arguments given")
+	}
+
+	ctx := context.Background()
+	// s.config.CurrentUserName
+
+	users, err := s.db.GetUsers(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to get list of users")
+	}
+
+	for _, user := range users {
+		selection := ""
+		if user.Name == s.config.CurrentUserName {
+			selection = " (current)"
+		}
+		fmt.Printf("* %s%s\n", user.Name, selection)
+	}
+
+	return nil
+}
