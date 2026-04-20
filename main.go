@@ -33,7 +33,7 @@ func main() {
 	commandTable.register("reset", handlerReset)
 	commandTable.register("users", handlerUsers)
 	commandTable.register("agg", handlerAgg)
-	commandTable.register("addfeed", handlerAddFeed)
+	commandTable.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	commandTable.register("feeds", handlerFeeds)
 	commandTable.register("follow", handlerFollow)
 	commandTable.register("following", handlerFollowing)

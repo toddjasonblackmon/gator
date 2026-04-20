@@ -137,16 +137,24 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+
+func middlewareLoggedIn(handler func (s *state, cmd command, user database.User) error ) func (s *state, cmd command) error {
+    return func (s *state, cmd command) error {
+        ctx := context.Background()
+        user, err := s.db.GetUser(ctx, s.config.CurrentUserName)
+        if err != nil {
+            return err
+        }
+
+        return handler(s, cmd, user)
+    }
+}
+
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 2 {
 		return errors.New("invalid number of arguments given")
 	}
 	ctx := context.Background()
-
-	currentUser, err := s.db.GetUser(ctx, s.config.CurrentUserName)
-	if err != nil {
-		return err
-	}
 
 	feedname := cmd.args[0]
 	url := cmd.args[1]
@@ -154,7 +162,7 @@ func handlerAddFeed(s *state, cmd command) error {
 	feed, err := s.db.CreateFeed(ctx,
 		database.CreateFeedParams{
 			uuid.New(), time.Now(), time.Now(),
-			feedname, url, currentUser.ID})
+			feedname, url, user.ID})
 	if err != nil {
 		return err
 	}
