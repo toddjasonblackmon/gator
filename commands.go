@@ -150,6 +150,22 @@ func middlewareLoggedIn(handler func (s *state, cmd command, user database.User)
     }
 }
 
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+    if len(cmd.args) != 1 {
+		return errors.New("invalid number of arguments given")
+    }
+	ctx := context.Background()
+    url := cmd.args[0]
+
+	feed, err := s.db.GetFeedByURL(ctx, url)
+	if err != nil {
+		return fmt.Errorf("unable to get feed by URL: %w", err)
+	}
+
+    return s.db.DeleteFeedFollow(ctx, 
+                    database.DeleteFeedFollowParams{user.ID, feed.ID})
+}
+
 func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 2 {
 		return errors.New("invalid number of arguments given")

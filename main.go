@@ -37,6 +37,7 @@ func main() {
 	commandTable.register("feeds", handlerFeeds)
 	commandTable.register("follow", handlerFollow)
 	commandTable.register("following", handlerFollowing)
+	commandTable.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 
 	if len(os.Args) < 2 {
 		fmt.Println("not enough arguments provided")
