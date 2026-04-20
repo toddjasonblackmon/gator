@@ -35,7 +35,8 @@ func main() {
 	commandTable.register("agg", handlerAgg)
 	commandTable.register("addfeed", handlerAddFeed)
 	commandTable.register("feeds", handlerFeeds)
-        
+	commandTable.register("follow", handlerFollow)
+	commandTable.register("following", handlerFollowing)
 
 	if len(os.Args) < 2 {
 		fmt.Println("not enough arguments provided")
@@ -60,4 +61,3 @@ func initState() state {
 
 	return s
 }
-

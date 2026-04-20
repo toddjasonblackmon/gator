@@ -79,7 +79,7 @@ func handlerRegister(s *state, cmd command) error {
 	}
 
 	s.config.SetUser(username)
-	fmt.Print(user)
+	fmt.Println(user)
 
 	return nil
 }
@@ -120,21 +120,21 @@ func handlerUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-    url := "https://www.wagslane.dev/index.xml"
+	url := "https://www.wagslane.dev/index.xml"
 
 	if len(cmd.args) != 0 {
 		return errors.New("invalid number of arguments given")
 	}
 	ctx := context.Background()
 
-    feed, err := fetchFeed(ctx, url)
-    if err != nil {
-        return err
-    }
+	feed, err := fetchFeed(ctx, url)
+	if err != nil {
+		return err
+	}
 
-    fmt.Println(*feed)
+	fmt.Println(*feed)
 
-    return nil
+	return nil
 }
 
 func handlerAddFeed(s *state, cmd command) error {
@@ -149,15 +149,18 @@ func handlerAddFeed(s *state, cmd command) error {
 	}
 
 	feedname := cmd.args[0]
-    url := cmd.args[1]
-
-
-
+	url := cmd.args[1]
 
 	feed, err := s.db.CreateFeed(ctx,
 		database.CreateFeedParams{
-			uuid.New(), time.Now(), time.Now(), 
-            feedname, url, currentUser.ID})
+			uuid.New(), time.Now(), time.Now(),
+			feedname, url, currentUser.ID})
+	if err != nil {
+		return err
+	}
+
+	// Add a follow record for this user
+	_, err = addFollow(s, url)
 	if err != nil {
 		return err
 	}
@@ -181,11 +184,76 @@ func handlerFeeds(s *state, cmd command) error {
 
 	for _, feed := range feeds {
 		fmt.Printf("%s\n * %s\n * from %s\n",
-            feed.Name, feed.Url, feed.Username)
+			feed.Name, feed.Url, feed.Username)
 	}
 
 	return nil
 }
 
+func addFollow(s *state, url string) (database.CreateFeedFollowRow, error) {
+	var record database.CreateFeedFollowRow
+	ctx := context.Background()
 
+	feedInfo, err := s.db.GetFeedByURL(ctx, url)
+	if err != nil {
+		return record, fmt.Errorf("unable to get feed by URL: %w", err)
+	}
 
+	userInfo, err := s.db.GetUser(ctx, s.config.CurrentUserName)
+	if err != nil {
+		return record, fmt.Errorf("unable to get user by name: %w", err)
+	}
+
+	// Create the new following record
+	ff := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    userInfo.ID,
+		FeedID:    feedInfo.ID,
+	}
+
+	record, err = s.db.CreateFeedFollow(ctx, ff)
+	if err != nil {
+		return record, fmt.Errorf("unable to add follow record: %w", err)
+	}
+
+	return record, nil
+}
+
+func handlerFollow(s *state, cmd command) error {
+	if len(cmd.args) != 1 {
+		return errors.New("invalid number of arguments given")
+	}
+
+	url := cmd.args[0]
+
+	record, err := addFollow(s, url)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s following %s\n", record.UserName, record.FeedName)
+
+	return nil
+
+}
+
+func handlerFollowing(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return errors.New("invalid number of arguments given")
+	}
+
+	ctx := context.Background()
+
+	follows, err := s.db.GetFeedFollowsForUser(ctx, s.config.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("unable to get list of feeds being followed")
+	}
+
+	for _, follow := range follows {
+		fmt.Printf("%s\n", follow.Feed)
+	}
+
+	return nil
+
+}
