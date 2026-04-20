@@ -120,50 +120,52 @@ func handlerUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	url := "https://www.wagslane.dev/index.xml"
-
-	if len(cmd.args) != 0 {
+	if len(cmd.args) != 1 {
 		return errors.New("invalid number of arguments given")
 	}
-	ctx := context.Background()
 
-	feed, err := fetchFeed(ctx, url)
-	if err != nil {
-		return err
-	}
+    time_between_reqs := cmd.args[0]
 
-	fmt.Println(*feed)
+    duration, err := time.ParseDuration(time_between_reqs)
+    if err != nil {
+        return err
+    }
+
+    ticker := time.NewTicker(duration)
+    for ; ; <-ticker.C {
+        scrapeFeeds(s)
+    }
+
 
 	return nil
 }
 
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(s *state, cmd command) error {
+	return func(s *state, cmd command) error {
+		ctx := context.Background()
+		user, err := s.db.GetUser(ctx, s.config.CurrentUserName)
+		if err != nil {
+			return err
+		}
 
-func middlewareLoggedIn(handler func (s *state, cmd command, user database.User) error ) func (s *state, cmd command) error {
-    return func (s *state, cmd command) error {
-        ctx := context.Background()
-        user, err := s.db.GetUser(ctx, s.config.CurrentUserName)
-        if err != nil {
-            return err
-        }
-
-        return handler(s, cmd, user)
-    }
+		return handler(s, cmd, user)
+	}
 }
 
 func handlerUnfollow(s *state, cmd command, user database.User) error {
-    if len(cmd.args) != 1 {
+	if len(cmd.args) != 1 {
 		return errors.New("invalid number of arguments given")
-    }
+	}
 	ctx := context.Background()
-    url := cmd.args[0]
+	url := cmd.args[0]
 
 	feed, err := s.db.GetFeedByURL(ctx, url)
 	if err != nil {
 		return fmt.Errorf("unable to get feed by URL: %w", err)
 	}
 
-    return s.db.DeleteFeedFollow(ctx, 
-                    database.DeleteFeedFollowParams{user.ID, feed.ID})
+	return s.db.DeleteFeedFollow(ctx,
+		database.DeleteFeedFollowParams{user.ID, feed.ID})
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
